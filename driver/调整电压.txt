@@ -1,0 +1,81 @@
+
+
+iTOP-4412核心板使用的电源管理芯片是三星专门针对4412研发的S5M8767,8767提供9路BUCK和28路LDO输出，每路电压的大小可以通过
+
+软件进行设置。S5M8767的驱动位于内核drivers/regulator/s5m8767.c,CPU是通过I2C总线来控制它。S5M8767注册到内核里面的
+
+regulator模块。Regulator模块是内核中用于控制系统中某些设备的电压/电流供应，在嵌入式系统（尤其是手持设备）中，控制耗电
+
+量很重要，直接影响到电池的续航时间。所以。如果系统中某一个模块暂时不使用，就可以通过regulator关闭其电源；或者降低提供给
+
+该模块的电压、电流大小。 
+
+S5M8767驱动的主要作用就是调用regulator_register函数向内核注册regulator_dev设备，每个regulator_dev代表一个regulator设备，
+
+内核可以分别控制每个regulator。
+
+为了实现S5m8767驱动我们还需要在平台相关的代码里定义regulator_init_data结构，regulator_init_data用来建立父子regulator、
+
+手电模块之间的树状结构，以及一些regulator的基本信息，比如电压大小，下面我们来看下regulator_init_data结构，代码在
+
+arch/arm/mach-exynos/mach-itop4412.c里面，在这个文件里使用宏REGULATOR_INIT来定义28个LDO的regulator_init_data结构，
+
+#define REGULATOR_INIT(_ldo, _name, _min_uV, _max_uV, _always_on, _ops_mask,\
+		_disabled) \
+	static struct regulator_init_data s5m8767_##_ldo##_init_data = {		\
+		.constraints = {					\
+			.name	= _name,				\
+			.min_uV = _min_uV,				\
+			.max_uV = _max_uV,				\
+			.always_on	= _always_on,			\
+			.boot_on	= _always_on,			\
+			.apply_uV	= 1,				\
+			.valid_ops_mask = _ops_mask,			\
+			.state_mem	= {				\
+				.disabled	= _disabled,		\
+				.enabled	= !(_disabled),		\
+			}						\
+		},							\
+		.num_consumer_supplies = ARRAY_SIZE(s5m8767_##_ldo##_supply),	\
+		.consumer_supplies = &s5m8767_##_ldo##_supply[0],			\
+	}
+
+上面的宏定义中，第三个和第四个参数指定了LDO的电压最小值和最大值，第五个参数设置LDO在系统开始运行时是输出还是关闭的（1是输出，0是关闭），
+
+第六个参数是LDO具有哪些功能，例如可以修改电压，电流，改变状态等等通过位掩码的方式设置，第七个参数是设置在休眠的时候是否由PWREN引脚控制它的开关（1是由PWREN控制，0是不受PWREN控制），休眠的时候PWREN为低电平，LDO会关闭，系统
+
+唤醒，PWREN为高电平，LDO会输出。
+	
+例如LDO2的定义，如下：
+
+REGULATOR_INIT(ldo2, "VDDQ_M12", 1500000, 1500000, 1,
+		REGULATOR_CHANGE_STATUS, 1)
+		
+根据定义，可以知道LDO2输出的电压是1.5v，系统启动的时候会默认输出，系统休眠的时候会关闭。其他的LDO的设置原理与LDO2是一样的。
+
+系统中BUCK的定义，例如BUCK1如下：
+
+static struct regulator_init_data s5m8767_buck1_data = {
+	.constraints	= {
+		.name		= "vdd_mif range",
+		.min_uV		= 900000,
+		.max_uV		= 1100000,
+		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
+		.state_mem	= {
+			.disabled	= 1,
+		},
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &s5m8767_buck1_consumer,
+};
+
+根据上面的定义，可以知道BUCK1的电压范围在0.9v到1.1v，他具有可以修改电压，修改状态的功能（变量valid_ops_mask）。可以使用函数
+
+regulator_set_voltage修改BUCK1的电压。其他几个BUCK的定义原理和BUCK1是一样的
+
+如果我们想要修改8767的某个LDO的输出电压，就可以通过修改对应的LDO的regulator_init_data结构体里面的电压值来实现，修改BUCK的电
+
+压可以使用函数regulator_set_voltage来实现。注意：在修改输出电压的时候，一定要参照8767的datasheet，确保修改的电压在datasheet规
+
+定的范围内

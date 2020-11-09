@@ -1,0 +1,44 @@
+设定IP
+
+$sudo gedit /etc/network/interfaces
+auto lo
+iface lo inet loopback            
+
+
+auto eth0 
+iface eth0 inet static 
+address 192.168.0.111 
+
+netmask 255.255.255.0 
+gateway 192.168.0.1
+
+保存，并关闭gedit。
+这样，IP并没有立即生效。需要执行
+
+$sudo /etc/init.d/networking restart
+
+这时候就能ping到局域网中的电脑了。但是上不了Internet，是因为没有设置DNS的原因。DNS信息保存在/etc/resolv.conf中，一旦更改，立即生效。
+
+$sudo gedit /etc/resolv.conf
+
+
+nameserver 192.168.2.43
+nameserver 192.168.2.6
+
+ 
+
+保存并关闭，现在就可以上网了。
+
+附网卡设置相关命令：
+
+查看网卡信息： ifconfig
+
+
+设定一个网卡IP：ifconfig eth1 192.168.1.10 netmask 255.255.255.0 
+
+重启网卡使设定生效：sudo /etc/init.d/networking restart
+
+更改MAC地址：ifconfig eth0 hw ether xx:xx:xx:xx:xx:xx
+
+查看路由相关信息：route -n
+

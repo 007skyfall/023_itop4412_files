@@ -1,0 +1,10 @@
+在Display_settings.xml文件中我们可以找到：
+<CheckBoxPreference
+android:key="accelerometer"
+android:title="@string/accelerometer_title"/>这是选项框的布局，然后我们到package/app/settings/src/com/android/Settings中的DisplaySettings.java中修改如下方法：
+private void updateAccelerometerRotationCheckbox() {
+        /*mAccelerometer.setChecked(Settings.System.getInt(
+               getContentResolver(),
+                Settings.System.ACCELEROMETER_ROTATION, 0) != 0);*/
+        mAccelerometer.setChecked(false);
+}即可

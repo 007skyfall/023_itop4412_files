@@ -1,0 +1,9 @@
+*****************************
+NO Updating SD Card!         
+*****************************
+
+Home键没有上拉，不上拉home键则会出现进入一键烧写模式
+
+uboot源码下修改
+vim cpu/arm_cortexa9/s5pc210/recovery.c
+将value = __REG(GPX1DAT);行用value = 0x2;替换。

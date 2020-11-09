@@ -1,0 +1,5 @@
+iTOP-4412开发板，怎么修改开机lcd显示的logo？
+
+准备一张640x480分辨率的bmp格式的图片，使用转换工具（Img2Lcd）把图片转换成数组文件，使用生成的数组内容替换内核源码
+drivers/video/samsung/iTop-4412.h里面iBitmapData_q数组的内容，然后使用make命令重新编译内核，然后烧写到开发板，
+上电启动开发板即可

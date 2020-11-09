@@ -1,0 +1,5 @@
+
+
+iTOP-4412开发板，运行Linux QT系统，U盘不能挂载，什么原因？
+
+linux QT系统下挂载u盘，首先用命令mknod /dev/sda1 b 8 1创建U盘的设备节点，然后使用命令mount /dev/sda1 /mnt/udisk/挂载u盘即可。

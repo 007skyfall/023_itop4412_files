@@ -1,0 +1,3 @@
+iTOP-4412开发板，Android怎么切换横竖屏显示？
+
+修改android源码“device/samsung/smdk4x12/system.prop”文件里面的ro.sf.hwrotation参数

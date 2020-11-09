@@ -1,0 +1,31 @@
+
+
+iTOP-4412开发板，去掉了传感器芯片后，系统起不来了？
+
+修改Android源码device/samsung/smdk4x12/device.mk文件，找到里面的
+#replace sensor
+#PRODUCT_COPY_FILES += \
+#        device/samsung/smdk4x12/apk/sensors.smdk4x12.so:system/lib/hw/sensors.smdk4x12.so
+
+修改如下：
+#replace sensor
+PRODUCT_COPY_FILES += \
+        device/samsung/smdk4x12/apk/sensors.smdk4x12.so:system/lib/hw/sensors.smdk4x12.so
+        
+
+然后找到:
+ifeq ($(BOARD_HAVE_MPU6050),true)
+  include $(LOCAL_PATH)/../common/libsensors_mpu6050/libsensors_product_packages.mk
+endif
+
+修改如下:
+#ifeq ($(BOARD_HAVE_MPU6050),true)
+#  include $(LOCAL_PATH)/../common/libsensors_mpu6050/libsensors_product_packages.mk
+#endif
+
+如果已经编译过Android了，进入到目录（如果没有编译过，就直接执行./build_android.sh编译Android）
+out/target/product/smdk4x12
+使用rm命令删除掉下面的文件：
+rm -rf ./system/lib/hw/sensors.smdk4x12.so
+rm -rf ./obj/lib/sensors.smdk4x12.so
+然后回到源码目录下，重新执行./build_android.sh，编译Android

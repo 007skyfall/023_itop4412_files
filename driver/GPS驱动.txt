@@ -1,0 +1,50 @@
+iTOP4412开发板GPS驱动。
+
+GPS硬件上是通过串口来通信的，我们只需要连接GPS模块的TXD，RXD到cpu的串口上，然后GPS还需要一个复位引脚
+
+我们连接这个引脚到CPU的任意一个GPIO即可（iTOP-4412连接到了cpu的GPB_4引脚上）。
+
+GPS软件上分为两部分，分别是内核驱动和Android上的HAL层驱动，下面我们先来看看内核驱动部分
+
+因为内核本身就支持串口驱动了，所以我们要做的就是添加一个字符驱动，这个字符驱动的作用就是
+
+控制GPS模块的复位引脚，驱动源码存放在内核目录的driver/cha/gps.c文件里。gps.c是一个简单的
+字符驱动，它主要提供了gps_open,gps_open负责打开设备代码如下：
+int gps_open(struct inode *inode,struct file *filp)
+{
+	DPRINTK("Device Opened Success!\n");
+	return nonseekable_open(inode,filp);
+}
+
+gps_release负责关闭设备函数如下：
+int gps_release(struct inode *inode,struct file *filp)
+{
+	DPRINTK("Device Closed Success!\n");
+	return 0;
+}
+
+gps_ioctl是上层应用和内核驱动就行通信的接口，可以
+给GPS驱动发送控制信息（设置复位引脚GPB_4的电平高低）。设置复位引脚的代码如下：
+case RST_HIGH:
+			//gpio_direction_output(S5PV310_GPB(4),0);			
+			//mdelay(500);	
+			if(gpio_request(EXYNOS4_GPB(4) ,"GPS_power"))
+				DPRINTK("GPS GPIO err!\r\n");
+			else{
+				gpio_direction_output(EXYNOS4_GPB(4),0);                      
+                        	mdelay(500); 
+				gpio_direction_output(EXYNOS4_GPB(4),1);			
+				DPRINTK("GPS_RSTn Set High!\n");
+				gpio_free(EXYNOS4_GPB(4));}
+			break;
+		case RST_LOW:
+			if(gpio_request(EXYNOS4_GPB(4) ,"GPS_power"))
+				DPRINTK("GPS GPIO err!\r\n");
+			else{			
+				gpio_direction_output(EXYNOS4_GPB(4),0);
+				DPRINTK("GPS_RSTn Set Low!\n");
+				gpio_free(EXYNOS4_GPB(4));}			
+			break;
+
+内核里gps驱动的作用就是上层应用在使用gps的时候给gps一个复位，时GPS
+模块开始工作。这个驱动也很简单。

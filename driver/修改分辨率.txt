@@ -1,0 +1,5 @@
+我在淘宝上买了一块iTOP-4412开发板，通过HDMI接到显示器上，发现HDMI不是1080p显示，怎么修改代码使HDMI支持1080p呀？
+
+打开内核源码目录下的文件：drivers/video/samsung/s3cfb_wa101s.c，
+修改结构体wa101里面的变量width和height，width改成1920，height改
+成1080，然后使用make命令重新编译内核，然后烧写到开发板，上电启动开发板即可
